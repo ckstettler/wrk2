@@ -376,7 +376,7 @@ static int check_timeouts(aeEventLoop *loop, long long id, void *data) {
     uint64_t maxAge = now - (cfg.timeout * 1000);
 
     for (uint64_t i = 0; i < thread->connections; i++, c++) {
-        if (maxAge > c->start) {
+        if (c->start != 0 && maxAge > c->start) {
             thread->errors.timeout++;
         }
     }
@@ -507,6 +507,9 @@ static int response_complete(http_parser *parser) {
 
     // Count all responses (including pipelined ones:)
     c->complete++;
+
+    // Reset start time to prevent false timeouts when rate is low and connections are high
+    c->start=0;
 
     // Note that expected start time is computed based on the completed
     // response count seen at the beginning of the last request batch sent.
